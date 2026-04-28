@@ -4,23 +4,27 @@ PASS=$2
 
 if [ -z "$PASS" ]; then echo "Uso: $0 <puerto> <pass>"; exit 1; fi
 
-# --- MOSTRAR INTERFACES DE RED (Soporte IP e IFCONFIG) ---
+# --- MOSTRAR INTERFACES DE RED (Soporte Robusto para Android/NetHunter) ---
 echo -e "\e[1;34m[*] Interfaces disponibles:\e[0m"
 
-if command -v ip &> /dev/null; then
-    # Usar 'ip addr' si está disponible
-    ip -4 -o addr show | awk '{print $2 " - " $4}' | cut -d/ -f1 | grep -v "lo" | head -n 5 | while read -r line; do
+# Intentar obtener IPs con 'ip addr', si da error de permiso, saltar a 'ifconfig'
+IP_OUTPUT=$(ip -4 -o addr show 2>/dev/null)
+
+if [ $? -eq 0 ] && [ -n "$IP_OUTPUT" ]; then
+    # Caso: 'ip' funciona correctamente
+    echo "$IP_OUTPUT" | awk '{print $2 " - " $4}' | cut -d/ -f1 | grep -v "lo" | head -n 5 | while read -r line; do
         echo -e "    \e[1;33m→\e[0m $line"
     done
 elif command -v ifconfig &> /dev/null; then
-    # Usar 'ifconfig' (fallback para Android/Legacy)
-    ifconfig | awk '/inet / {print $1 " " $2}' | grep -v "127.0.0.1" | head -n 5 | while read -r line; do
-        # Ajuste para formato de salida de ifconfig (algunos ponen 'addr:')
-        clean_line=$(echo $line | sed 's/addr://')
-        echo -e "    \e[1;33m→\e[0m $clean_line"
+    # Caso: 'ip' falló (Permission Denied) o no existe, usamos ifconfig
+    ifconfig 2>/dev/null | awk '/inet / {print $1 " " $2}' | grep -v "127.0.0.1" | head -n 5 | while read -r line; do
+        # Limpieza de "addr:" y asegurar formato Interfaz - IP
+        iface=$(echo $line | awk '{print $1}' | sed 's/://')
+        ip_addr=$(echo $line | awk '{print $2}' | sed 's/addr://')
+        echo -e "    \e[1;33m→\e[0m $iface - $ip_addr"
     done
 else
-    echo -e "    \e[1;31m[!]\e[0m No se pudo detectar IP (instala iproute2 o net-tools)"
+    echo -e "    \e[1;31m[!]\e[0m No se pudo detectar IP (permisos insuficientes)"
 fi
 echo ""
 
@@ -29,10 +33,9 @@ DEPS=("socat" "openssl")
 for tool in "${DEPS[@]}"; do
     if ! command -v "$tool" &> /dev/null; then
         echo -e "\e[1;31m[!]\e[0m $tool no encontrado. Intentando instalar..."
-        # Si es Android (Termux), usa pkg. Si es Linux, usa apt.
         if command -v pkg &> /dev/null; then
             pkg install -y "$tool"
-        else
+        elif command -v apt-get &> /dev/null; then
             sudo apt-get update && sudo apt-get install -y "$tool"
         fi
         
@@ -44,15 +47,16 @@ for tool in "${DEPS[@]}"; do
 done
 
 # --- CONFIGURACIÓN DE CERTIFICADOS EN RAM ---
-# En Android /dev/shm puede no existir, usamos /tmp o el dir actual como fallback
+# Fallback dinámico de directorios temporales
 RAM_DIR="/dev/shm"
 [ ! -d "$RAM_DIR" ] && RAM_DIR="/tmp"
+[ ! -w "$RAM_DIR" ] && RAM_DIR="." # Si /tmp no es escribible, usar dir actual
 
 CERT="$RAM_DIR/cert.pem"; KEY="$RAM_DIR/key.pem"; COMBINED="$RAM_DIR/server.pem"
 openssl req -x509 -newkey rsa:4096 -keyout "$KEY" -out "$CERT" -days 1 -nodes -subj "/C=US/O=Dev/CN=localhost" 2>/dev/null
 cat "$KEY" "$CERT" > "$COMBINED"
 
-trap "rm -f $KEY $CERT $COMBINED; echo -e '\n\e[1;31m[-]\e[0m Limpiando RAM y saliendo...'; exit" SIGINT
+trap "rm -f $KEY $CERT $COMBINED; echo -e '\n\e[1;31m[-]\e[0m Limpiando y saliendo...'; exit" SIGINT
 
 # --- BUCLE PRINCIPAL ---
 while true; do
