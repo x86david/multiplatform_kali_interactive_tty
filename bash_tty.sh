@@ -4,12 +4,24 @@ PASS=$2
 
 if [ -z "$PASS" ]; then echo "Uso: $0 <puerto> <pass>"; exit 1; fi
 
-# --- MOSTRAR INTERFACES DE RED ---
+# --- MOSTRAR INTERFACES DE RED (Soporte IP e IFCONFIG) ---
 echo -e "\e[1;34m[*] Interfaces disponibles:\e[0m"
-# Obtiene el nombre de interfaz e IP, filtra loopback, toma las primeras 5 y las formatea
-ip -4 -o addr show | awk '{print $2 " - " $4}' | grep -v "lo" | head -n 5 | while read -r line; do
-    echo -e "    \e[1;33m→\e[0m $line"
-done
+
+if command -v ip &> /dev/null; then
+    # Usar 'ip addr' si está disponible
+    ip -4 -o addr show | awk '{print $2 " - " $4}' | cut -d/ -f1 | grep -v "lo" | head -n 5 | while read -r line; do
+        echo -e "    \e[1;33m→\e[0m $line"
+    done
+elif command -v ifconfig &> /dev/null; then
+    # Usar 'ifconfig' (fallback para Android/Legacy)
+    ifconfig | awk '/inet / {print $1 " " $2}' | grep -v "127.0.0.1" | head -n 5 | while read -r line; do
+        # Ajuste para formato de salida de ifconfig (algunos ponen 'addr:')
+        clean_line=$(echo $line | sed 's/addr://')
+        echo -e "    \e[1;33m→\e[0m $clean_line"
+    done
+else
+    echo -e "    \e[1;31m[!]\e[0m No se pudo detectar IP (instala iproute2 o net-tools)"
+fi
 echo ""
 
 # --- VERIFICACIÓN DE DEPENDENCIAS ---
@@ -17,7 +29,13 @@ DEPS=("socat" "openssl")
 for tool in "${DEPS[@]}"; do
     if ! command -v "$tool" &> /dev/null; then
         echo -e "\e[1;31m[!]\e[0m $tool no encontrado. Intentando instalar..."
-        sudo apt-get update && sudo apt-get install -y "$tool"
+        # Si es Android (Termux), usa pkg. Si es Linux, usa apt.
+        if command -v pkg &> /dev/null; then
+            pkg install -y "$tool"
+        else
+            sudo apt-get update && sudo apt-get install -y "$tool"
+        fi
+        
         if [ $? -ne 0 ]; then
             echo "[-] Error al instalar $tool."
             exit 1
@@ -26,7 +44,11 @@ for tool in "${DEPS[@]}"; do
 done
 
 # --- CONFIGURACIÓN DE CERTIFICADOS EN RAM ---
-CERT="/dev/shm/cert.pem"; KEY="/dev/shm/key.pem"; COMBINED="/dev/shm/server.pem"
+# En Android /dev/shm puede no existir, usamos /tmp o el dir actual como fallback
+RAM_DIR="/dev/shm"
+[ ! -d "$RAM_DIR" ] && RAM_DIR="/tmp"
+
+CERT="$RAM_DIR/cert.pem"; KEY="$RAM_DIR/key.pem"; COMBINED="$RAM_DIR/server.pem"
 openssl req -x509 -newkey rsa:4096 -keyout "$KEY" -out "$CERT" -days 1 -nodes -subj "/C=US/O=Dev/CN=localhost" 2>/dev/null
 cat "$KEY" "$CERT" > "$COMBINED"
 
