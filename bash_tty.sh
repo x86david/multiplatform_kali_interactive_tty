@@ -1,6 +1,6 @@
 #!/bin/bash
 # Forzamos que se use bash para evitar errores de sintaxis
-PORT=${1:-4444}
+PORT=${1:-2222}
 PASS=$2
 
 if [ -z "$PASS" ]; then 

